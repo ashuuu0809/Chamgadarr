@@ -1,17 +1,12 @@
 {
+  "name": "Chamgadarr",
+  "version": "1.0.0",
   "dependencies": {
-    "express": "^5.1.0",
-    "mineflayer": "^4.31.0",
-    "mineflayer-armor-manager": "^2.0.1",
-    "mineflayer-auto-eat": "^5.0.3",
-    "mineflayer-collectblock": "^1.6.0",
-    "mineflayer-pathfinder": "^2.4.5",
-    "mineflayer-pvp": "^1.3.2",
-    "mineflayer-tool": "^1.2.0",
-    "prismarine-viewer": "^1.33.0",
-    "vec3": "^0.1.10"
+    "mineflayer": "^4.17.0",
+    "mineflayer-pathfinder": "^2.4.0",
+    "mineflayer-collectblock": "^0.1.10"
+  },
+  "scripts": {
+    "start": "node server.js"
   }
-}
-"scripts": {
-  "start": "node ai.js"
 }
