@@ -5,13 +5,12 @@ const puppeteer = require('puppeteer');
 
 const USERNAME = 'samosa0510';
 const PASSWORD = 'samosa@1005';
-const SERVER_SLUG = 'Striker_Ot'; // The part after /server/ in your URL
+const SERVER_SLUG = 'Striker_Ot'; // part after /server/ in your Aternos URL
 
 const app = express();
 app.get('/', (req, res) => res.send('Aternos Auto Starter Running'));
 app.listen(3000, () => console.log('Web server running on port 3000'));
 
-// Function to start the server
 async function startServer() {
   console.log(`[${new Date().toLocaleTimeString()}] Checking server status...`);
 
@@ -37,7 +36,7 @@ async function startServer() {
     if (startBtn) {
       console.log('Server is offline. Starting now...');
       await startBtn.click();
-      await page.waitForTimeout(3000);
+      await page.waitForTimeout(5000);
       console.log('Start command sent.');
     } else {
       console.log('Server is already running.');
