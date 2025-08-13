@@ -1,56 +1,57 @@
-// index.js — Aternos Auto Starter (Free with UptimeRobot + Render)
+// index.js — Aternos Auto Starter + Keep Alive Web Server
 
-// ===== EXPRESS SERVER =====
 const express = require('express');
-const app = express();
 const puppeteer = require('puppeteer');
 
-app.get('/', (req, res) => {
-  res.send('Aternos Auto Starter is running');
-});
+const USERNAME = 'YOUR_ATERNOS_USERNAME';
+const PASSWORD = 'YOUR_ATERNOS_PASSWORD';
+const SERVER_SLUG = 'Striker_Ot'; // The part after /server/ in your URL
 
-// Endpoint UptimeRobot will hit every 10 minutes
-app.get('/start-server', async (req, res) => {
-  try {
-    res.send('Starting Aternos server...');
-    await startAternos();
-  } catch (err) {
-    console.error(err);
-  }
-});
-
+const app = express();
+app.get('/', (req, res) => res.send('Aternos Auto Starter Running'));
 app.listen(3000, () => console.log('Web server running on port 3000'));
 
-// ===== PUPPETEER SCRIPT =====
-async function startAternos() {
-  console.log('Launching browser...');
+// Function to start the server
+async function startServer() {
+  console.log(`[${new Date().toLocaleTimeString()}] Checking server status...`);
+
   const browser = await puppeteer.launch({
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
-
   const page = await browser.newPage();
 
-  // === LOGIN ===
-  console.log('Logging into Aternos...');
-  await page.goto('https://aternos.org/go/', { waitUntil: 'networkidle2' });
-  await page.type('#user', 'samosa0510', { delay: 50 });
-  await page.type('#password', 'samosa@1005', { delay: 50 });
-  await page.click('#login');
+  try {
+    // Login
+    await page.goto('https://aternos.org/go/', { waitUntil: 'networkidle2' });
+    await page.type('#user', USERNAME, { delay: 100 });
+    await page.type('#password', PASSWORD, { delay: 100 });
+    await page.click('#login');
+    await page.waitForNavigation({ waitUntil: 'networkidle2' });
 
-  await page.waitForNavigation({ waitUntil: 'networkidle2' });
+    // Go to server page
+    await page.goto(`https://aternos.org/server/${SERVER_SLUG}`, { waitUntil: 'networkidle2' });
 
-  // === CLICK SERVER ===
-  console.log('Opening server page...');
-  await page.goto('https://aternos.org/servers/Striker_Ot', { waitUntil: 'networkidle2' });
+    // Check if "Start" button exists
+    const startBtn = await page.$('button.start');
+    if (startBtn) {
+      console.log('Server is offline. Starting now...');
+      await startBtn.click();
+      await page.waitForTimeout(3000);
+      console.log('Start command sent.');
+    } else {
+      console.log('Server is already running.');
+    }
 
-  // === START BUTTON ===
-  console.log('Clicking start...');
-  await page.click('.server-status.start');
+  } catch (err) {
+    console.error('Error starting server:', err);
+  }
 
-  // Optional: wait some seconds so it processes
-  await page.waitForTimeout(5000);
-
-  console.log('Server start triggered.');
   await browser.close();
 }
+
+// Run immediately on start
+startServer();
+
+// Repeat every 10 minutes
+setInterval(startServer, 10 * 60 * 1000);
