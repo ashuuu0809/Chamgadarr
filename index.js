@@ -1,8 +1,9 @@
-// minecraft.js — AN ANTI-AFK+ANTI-BAN AUTOMATED BOT BY ARSH
+// minecraft.js — AN ANTI-AFK+ANTI-BAN + AUTO-RECONNECT BOT BY ARSH
 
 const mineflayer = require('mineflayer');
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
 const { Vec3 } = require('vec3');
+const express = require('express');
 
 function createBot() {
   const bot = mineflayer.createBot({
@@ -22,9 +23,7 @@ function createBot() {
     const defaultMove = new Movements(bot, mcData);
     bot.pathfinder.setMovements(defaultMove);
 
-    bot.setControlState('jump', true);
-    bot.setControlState('forward', true);
-
+    // Continuous small random movement for anti-AFK
     setInterval(() => {
       const offset = () => (Math.random() * 10 - 5);
       const goal = new goals.GoalNear(
@@ -35,6 +34,18 @@ function createBot() {
       );
       bot.pathfinder.setGoal(goal, true);
     }, 15000);
+
+    // Slight jumping randomly to prevent kick
+    setInterval(() => {
+      bot.setControlState('jump', Math.random() > 0.7);
+    }, 5000);
+
+    // Forward/backward random toggle to prevent AFK
+    setInterval(() => {
+      const forward = Math.random() > 0.5;
+      bot.setControlState('forward', forward);
+      bot.setControlState('back', !forward);
+    }, 10000);
   });
 
   bot.on('chat', (username, message) => {
@@ -76,6 +87,23 @@ function createBot() {
         bot.chat("Unknown command.");
     }
   });
+
+  // Auto-reconnect if kicked or disconnected
+  bot.on('end', () => {
+    console.log('Bot disconnected, reconnecting in 10 seconds...');
+    setTimeout(createBot, 10000);
+  });
+
+  bot.on('error', err => {
+    console.log('Bot error:', err.message);
+  });
 }
 
+// === EXPRESS SERVER FOR RENDER / UPTIME ROBOT PING ===
+const app = express();
+app.get('/', (req, res) => res.send('Minecraft bot is running!'));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
+
+// Start the bot
 createBot();
