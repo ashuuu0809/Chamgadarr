@@ -1,60 +1,46 @@
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-const AdblockerPlugin = require('puppeteer-extra-plugin-adblocker');
+const puppeteer = require('puppeteer');
 
-puppeteer.use(StealthPlugin());
-puppeteer.use(AdblockerPlugin({ blockTrackers: true }));
+const email = "samosa0510";       // Aternos login email
+const password = "samosa@1005"; // Aternos password
+const serverName = "Striker_Ot";  // Your server name (from URL)
 
-(async () => {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
-  const page = await browser.newPage();
+async function startServer() {
+    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
+    const page = await browser.newPage();
 
-  try {
+    console.log("Logging into Aternos...");
+    await page.goto('https://aternos.org/go/', { waitUntil: 'networkidle2' });
+
     // Login
-    await page.goto('https://aternos.org/go', { waitUntil: 'networkidle2' });
-    await page.type('input[name="samosa0510"]', process.env.ATERNOS_USER, { delay: 50 });
-    await page.type('input[name="samosa@1005"]', process.env.ATERNOS_PASS, { delay: 50 });
-    await page.click('button[type="submit"]');
-    await page.waitForNavigation({ waitUntil: 'networkidle2' });
+    await page.click('#login');
+    await page.waitForSelector('#user');
+    await page.type('#user', email);
+    await page.type('#password', password);
+    await page.click('#login-button');
 
-    // Go to server page
-    await page.goto(`https://aternos.org/server/${process.env.ATERNOS_SERVER}`, { waitUntil: 'networkidle2' });
+    // Open server page
+    await page.waitForSelector(`a[href="/server/${serverName}"]`);
+    await page.click(`a[href="/server/${serverName}"]`);
 
-    // Check if "Start" button exists
-    const startBtn = await page.$('button.start');
-    if (startBtn) {
-      console.log("⚡ Server is offline — starting now...");
-      await startBtn.click();
+    console.log("Checking server status...");
+    await page.waitForSelector('#start', { timeout: 5000 }).then(async () => {
+        console.log("Server offline → starting...");
+        await page.click('#start');
+        console.log("Waiting in queue...");
+        await page.waitForTimeout(300000); // Wait 5 min queue time
+    }).catch(() => {
+        console.log("Server already running ✅");
+    });
 
-      // Confirm if needed
-      try {
-        await page.waitForSelector('.confirm', { timeout: 10000 });
-        await page.click('.confirm');
-        console.log("✅ Start confirmed.");
-      } catch {
-        console.log("ℹ No confirmation prompt.");
-      }
-
-      // Wait until server is online
-      console.log("⌛ Waiting for server to come online...");
-      await page.waitForFunction(
-        () => document.body.innerText.includes("Online"),
-        { timeout: 0 }
-      );
-      console.log("✅ Server is online!");
-    } else {
-      console.log("✅ Server already online!");
-    }
-  } catch (err) {
-    console.error("❌ Error:", err.message);
-  }
-
-  await browser.close();
+    await browser.close();
 }
 
-// Run every 10 minutes
-startAternosServer();
-setInterval(startAternosServer, 10 * 60 * 1000);
+async function loopForever() {
+    while (true) {
+        await startServer();
+        console.log("✅ Checked — waiting 10 min before next check...");
+        await new Promise(resolve => setTimeout(resolve, 600000)); // 10 min
+    }
+}
+
+loopForever();
