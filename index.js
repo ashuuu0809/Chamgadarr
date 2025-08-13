@@ -19,8 +19,8 @@ async function startAternosServer() {
   try {
     // Login
     await page.goto('https://aternos.org/go', { waitUntil: 'networkidle2' });
-    await page.type('input[name="user"]', process.env.ATERNOS_USER, { delay: 50 });
-    await page.type('input[name="password"]', process.env.ATERNOS_PASS, { delay: 50 });
+    await page.type('input[name="samosa0510"]', process.env.ATERNOS_USER, { delay: 50 });
+    await page.type('input[name="samosa@1005"]', process.env.ATERNOS_PASS, { delay: 50 });
     await page.click('button[type="submit"]');
     await page.waitForNavigation({ waitUntil: 'networkidle2' });
 
