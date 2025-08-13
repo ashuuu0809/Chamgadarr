@@ -2,11 +2,6 @@
 
 const mineflayer = require('mineflayer');
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
-const autoeat = require('mineflayer-auto-eat');
-const collectBlock = require('mineflayer-collectblock').plugin;
-const pvp = require('mineflayer-pvp').plugin;
-const tool = require('mineflayer-tool').plugin;
-const armorManager = require('mineflayer-armor-manager').plugin;
 const { Vec3 } = require('vec3');
 
 function createBot() {
@@ -18,11 +13,6 @@ function createBot() {
   });
 
   bot.loadPlugin(pathfinder);
-  if (typeof autoeat === 'function') bot.loadPlugin(autoeat);
-  if (typeof collectBlock === 'function') bot.loadPlugin(collectBlock);
-  if (typeof pvp === 'function') bot.loadPlugin(pvp);
-  if (typeof tool === 'function') bot.loadPlugin(tool);
-  if (typeof armorManager === 'function') bot.loadPlugin(armorManager);
 
   let waypoints = [];
   let memory = {};
@@ -31,15 +21,6 @@ function createBot() {
     const mcData = require('minecraft-data')(bot.version);
     const defaultMove = new Movements(bot, mcData);
     bot.pathfinder.setMovements(defaultMove);
-
-    if (bot.autoEat) {
-      bot.autoEat.options = {
-        priority: 'foodPoints',
-        startAt: 18,
-        bannedFood: []
-      };
-      bot.autoEat.enable();
-    }
 
     bot.setControlState('jump', true);
     bot.setControlState('forward', true);
@@ -56,13 +37,6 @@ function createBot() {
     }, 15000);
   });
 
-  bot.on('autoeat_started', () => console.log('🍗 Eating...'));
-  bot.on('autoeat_finished', () => console.log('✅ Done eating.'));
-  bot.on('health', () => {
-    if (bot.food < 18 && bot.autoEat) bot.autoEat.enable();
-    else if (bot.autoEat) bot.autoEat.disable();
-  });
-
   bot.on('chat', (username, message) => {
     if (username === bot.username) return;
     const player = bot.players[username]?.entity;
@@ -77,7 +51,6 @@ function createBot() {
         break;
       case '!stop':
         bot.pathfinder.setGoal(null);
-        if (bot.pvp) bot.pvp.stop();
         break;
       case '!guard':
         bot.pathfinder.setGoal(new goals.GoalBlock(player.position.x, player.position.y, player.position.z));
