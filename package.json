@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "dependencies": {
     "mineflayer": "^4.17.0",
-    "mineflayer-pathfinder": "^2.4.0",
+    "mineflayer-pathfinder": "^2.4.0"
   },
   "scripts": {
     "start": "node index.js"
