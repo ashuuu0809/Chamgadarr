@@ -3,8 +3,8 @@
 const express = require('express');
 const puppeteer = require('puppeteer');
 
-const USERNAME = 'YOUR_ATERNOS_USERNAME';
-const PASSWORD = 'YOUR_ATERNOS_PASSWORD';
+const USERNAME = 'samosa0510';
+const PASSWORD = 'samosa@1005';
 const SERVER_SLUG = 'Striker_Ot'; // The part after /server/ in your URL
 
 const app = express();
