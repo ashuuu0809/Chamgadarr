@@ -1,11 +1,21 @@
 {
   "name": "Chamgadarr",
   "version": "1.0.0",
-  "dependencies": {
-    "mineflayer": "^4.17.0",
-    "mineflayer-pathfinder": "^2.4.0"
-  },
+  "description": "Anti-AFK + Anti-Ban + Auto-Reconnect Minecraft bot by Arsh",
+  "main": "index.js",
   "scripts": {
     "start": "node index.js"
-  }
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mineflayer": "^4.17.0",
+    "mineflayer-pathfinder": "^2.4.0",
+    "vec3": "^5.0.0",
+    "minecraft-data": "^2.81.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "Arsh",
+  "license": "MIT"
 }
