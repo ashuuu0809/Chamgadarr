@@ -1,56 +1,108 @@
-// index.js — Aternos Auto Starter + Keep Alive Web Server
+// minecraft.js — AN ANTI-AFK+ANTI-BAN AUTOMATED BOT BY ARSH
 
-const express = require('express');
-const puppeteer = require('puppeteer');
+const mineflayer = require('mineflayer');
+const { pathfinder, Movements, goals } = require('mineflayer-pathfinder');
+const autoeat = require('mineflayer-auto-eat');
+const collectBlock = require('mineflayer-collectblock').plugin;
+const pvp = require('mineflayer-pvp').plugin;
+const tool = require('mineflayer-tool').plugin;
+const armorManager = require('mineflayer-armor-manager').plugin;
+const { Vec3 } = require('vec3');
 
-const USERNAME = 'samosa0510';
-const PASSWORD = 'samosa@1005';
-const SERVER_SLUG = 'Striker_Ot'; // part after /server/ in your Aternos URL
-
-const app = express();
-app.get('/', (req, res) => res.send('Aternos Auto Starter Running'));
-app.listen(3000, () => console.log('Web server running on port 3000'));
-
-async function startServer() {
-  console.log(`[${new Date().toLocaleTimeString()}] Checking server status...`);
-
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+function createBot() {
+  const bot = mineflayer.createBot({
+    host: 'Wbrother2nios.aternos.me',
+    port: 26555,
+    username: 'Rakshan2022',
+    version: false
   });
-  const page = await browser.newPage();
 
-  try {
-    // Login
-    await page.goto('https://aternos.org/go/', { waitUntil: 'networkidle2' });
-    await page.type('#user', USERNAME, { delay: 100 });
-    await page.type('#password', PASSWORD, { delay: 100 });
-    await page.click('#login');
-    await page.waitForNavigation({ waitUntil: 'networkidle2' });
+  bot.loadPlugin(pathfinder);
+  if (typeof autoeat === 'function') bot.loadPlugin(autoeat);
+  if (typeof collectBlock === 'function') bot.loadPlugin(collectBlock);
+  if (typeof pvp === 'function') bot.loadPlugin(pvp);
+  if (typeof tool === 'function') bot.loadPlugin(tool);
+  if (typeof armorManager === 'function') bot.loadPlugin(armorManager);
 
-    // Go to server page
-    await page.goto(`https://aternos.org/server/${SERVER_SLUG}`, { waitUntil: 'networkidle2' });
+  let waypoints = [];
+  let memory = {};
 
-    // Check if "Start" button exists
-    const startBtn = await page.$('button.start');
-    if (startBtn) {
-      console.log('Server is offline. Starting now...');
-      await startBtn.click();
-      await page.waitForTimeout(5000);
-      console.log('Start command sent.');
-    } else {
-      console.log('Server is already running.');
+  bot.once('spawn', () => {
+    const mcData = require('minecraft-data')(bot.version);
+    const defaultMove = new Movements(bot, mcData);
+    bot.pathfinder.setMovements(defaultMove);
+
+    if (bot.autoEat) {
+      bot.autoEat.options = {
+        priority: 'foodPoints',
+        startAt: 18,
+        bannedFood: []
+      };
+      bot.autoEat.enable();
     }
 
-  } catch (err) {
-    console.error('Error starting server:', err);
-  }
+    bot.setControlState('jump', true);
+    bot.setControlState('forward', true);
 
-  await browser.close();
+    setInterval(() => {
+      const offset = () => (Math.random() * 10 - 5);
+      const goal = new goals.GoalNear(
+        bot.entity.position.x + offset(),
+        bot.entity.position.y,
+        bot.entity.position.z + offset(),
+        1
+      );
+      bot.pathfinder.setGoal(goal, true);
+    }, 15000);
+  });
+
+  bot.on('autoeat_started', () => console.log('🍗 Eating...'));
+  bot.on('autoeat_finished', () => console.log('✅ Done eating.'));
+  bot.on('health', () => {
+    if (bot.food < 18 && bot.autoEat) bot.autoEat.enable();
+    else if (bot.autoEat) bot.autoEat.disable();
+  });
+
+  bot.on('chat', (username, message) => {
+    if (username === bot.username) return;
+    const player = bot.players[username]?.entity;
+    if (!player) return;
+
+    const args = message.split(' ');
+    const cmd = args[0];
+
+    switch (cmd) {
+      case '!follow':
+        bot.pathfinder.setGoal(new goals.GoalFollow(player, 1), true);
+        break;
+      case '!stop':
+        bot.pathfinder.setGoal(null);
+        if (bot.pvp) bot.pvp.stop();
+        break;
+      case '!guard':
+        bot.pathfinder.setGoal(new goals.GoalBlock(player.position.x, player.position.y, player.position.z));
+        break;
+      case '!waypoint':
+        waypoints.push(bot.entity.position.clone());
+        bot.chat(`📌 Saved point #${waypoints.length}`);
+        break;
+      case '!goto':
+        const i = parseInt(args[1]) - 1;
+        if (waypoints[i]) {
+          bot.pathfinder.setGoal(new goals.GoalBlock(waypoints[i].x, waypoints[i].y, waypoints[i].z));
+        }
+        break;
+      case '!remember':
+        memory[args[1]] = args.slice(2).join(' ');
+        bot.chat(`🧠 Remembered ${args[1]}`);
+        break;
+      case '!recall':
+        bot.chat(memory[args[1]] || '❌ Nothing saved under that key.');
+        break;
+      default:
+        bot.chat("Unknown command.");
+    }
+  });
 }
 
-// Run immediately on start
-startServer();
-
-// Repeat every 10 minutes
-setInterval(startServer, 10 * 60 * 1000);
+createBot();
